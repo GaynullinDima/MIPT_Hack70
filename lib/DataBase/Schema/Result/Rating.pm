@@ -35,7 +35,7 @@ __PACKAGE__->table("rating");
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 user_id
+=head2 id
 
   data_type: (empty string)
   is_foreign_key: 1
@@ -53,7 +53,7 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
   "lesson_id",
   { data_type => "", is_foreign_key => 1, is_nullable => 1 },
-  "user_id",
+  "id",
   { data_type => "", is_foreign_key => 1, is_nullable => 1 },
   "rate",
   { data_type => "integer", is_nullable => 1 },
@@ -72,6 +72,26 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("rating_id");
 
 =head1 RELATIONS
+
+=head2 id
+
+Type: belongs_to
+
+Related object: L<DataBase::Schema::Result::User>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "id",
+  "DataBase::Schema::Result::User",
+  { id => "id" },
+  {
+    is_deferrable => 0,
+    join_type     => "LEFT",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
+  },
+);
 
 =head2 lesson
 
@@ -93,29 +113,9 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 user
 
-Type: belongs_to
-
-Related object: L<DataBase::Schema::Result::User>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "user",
-  "DataBase::Schema::Result::User",
-  { user_id => "user_id" },
-  {
-    is_deferrable => 0,
-    join_type     => "LEFT",
-    on_delete     => "NO ACTION",
-    on_update     => "NO ACTION",
-  },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-20 03:20:46
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:w9TBK+b43aFaZQV9h3HMjg
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-20 12:27:26
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/IjCc7gUK/b69ZQ8dFbsvg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

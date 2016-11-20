@@ -57,4 +57,3 @@ CREATE TABLE rating (
 	id REFERENCES user(id),
 	rate INTEGER 
 );
-

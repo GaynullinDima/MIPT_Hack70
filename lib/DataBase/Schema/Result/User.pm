@@ -46,6 +46,11 @@ __PACKAGE__->table("user");
   data_type: 'integer'
   is_nullable: 1
 
+=head2 id
+
+  data_type: 'integer'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -56,6 +61,8 @@ __PACKAGE__->add_columns(
   "last_name",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "group_id",
+  { data_type => "integer", is_nullable => 1 },
+  "id",
   { data_type => "integer", is_nullable => 1 },
 );
 
@@ -84,7 +91,7 @@ Related object: L<DataBase::Schema::Result::Rating>
 __PACKAGE__->has_many(
   "ratings",
   "DataBase::Schema::Result::Rating",
-  { "foreign.user_id" => "self.user_id" },
+  { "foreign.id" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -104,8 +111,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-20 03:20:46
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/yED2fuwQei6/MUnV11wOQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-20 12:27:26
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/P5JZQzu1MZ2RCgeCRU9Jw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

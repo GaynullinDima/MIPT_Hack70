@@ -70,8 +70,14 @@ class DB_interactor:
 
 
 	def get_user(self, id):
-		result = self.user_isregistred(id)
-		return result[1]
+		con = self.create_connect()
+		cur = con.cursor()
+		cur.execute("SELECT first_name, last_name, group_id FROM user WHERE id = ?", (id, ))
+		result = cur.fetchall()
+		if not result:
+			return None
+		else:
+			return result[0]
 
 	'''______________________________________________________________________________________'''
 

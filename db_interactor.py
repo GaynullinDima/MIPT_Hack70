@@ -32,6 +32,16 @@ class DB_interactor:
 			except sqlite3.Error:
 				return None
 
+	def get_all_user_id(self):
+		con = self.create_connect()
+		cur = con.cursor()
+		cur.execute("SELECT id FROM user");
+		result = cur.fetchall()
+		if not result:
+			return None
+		else:
+			return result
+
 		
 	def user_isregistred(self, id):
 		con = self.create_connect()
@@ -110,12 +120,15 @@ class DB_interactor:
 		day_id = self.get_day_id_by_day(self.current_day)
 		con = self.create_connect()
 		cur = con.cursor()
-		cur.execute("SELECT lesson.lesson_id FROM schedule INNER JOIN lesson ON lesson.lesson_id = schedule.lesson_id WHERE num = ? AND group_id = ? AND day_id = ?", (num, group_id, day_id))
+		group_id = str(group_id)
+		day_id = str(day_id)
+		cur.execute("SELECT schedule.lesson_id FROM schedule INNER JOIN lesson ON lesson.lesson_id = schedule.lesson_id WHERE num = ? AND group_id = ? AND day_id = ?", (num, group_id, day_id))
 		result = cur.fetchall()
+		print(result)
 		if not result:
 			return None
 		else:
-			return result[0][0]
+			return int(result[0][0])
 
 
 

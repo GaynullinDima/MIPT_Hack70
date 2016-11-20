@@ -13,4 +13,4 @@ print(db.add_user("vas", "pup", 416, 4))
 print(db.get_user(1))
 print(db.get_group_id_by_id(3))
 print(db.mark_me(3, 3))
-
+print(db.get_all_user_id())

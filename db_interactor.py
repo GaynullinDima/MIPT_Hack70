@@ -49,7 +49,6 @@ class DB_interactor:
 		cur = con.cursor()
 		cur.execute("SELECT s.lesson_id FROM schedule AS s INNER JOIN lesson AS l ON s.lesson_id = l.lesson_id WHERE group_id = ?", (str(group_id),))
 		result = cur.fetchall()
-		print(result)
 		if not result:
 			return None
 		else:

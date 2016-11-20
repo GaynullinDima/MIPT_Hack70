@@ -40,7 +40,6 @@ class manager:
         self.stat_work = {}
         self.write_q = []
         self.db = db_interactor.DB_interactor()
-        self.connection = self.db.create_connect()
     def weekday_to_number(self, weekday):
         return {
                 'monday': 0,
@@ -71,8 +70,10 @@ class manager:
     def convert_to_inner(self):
         self.inner_rep = []
         for cur_req in self.read_q:
+
             split_req = cur_req.text.split(' ')
             split_req = [elem.lower() for elem in split_req if len(elem)]
+
             if (split_req[0] == 'help' or split_req[0] == '/start' or \
                 split_req[0] == 'now'):
                 self.inner_rep.append(request_t(cur_req.id, "service", \
@@ -80,23 +81,23 @@ class manager:
             elif (split_req[0] == 'signup'):
                 signup = signup_t(split_req[1], split_req[2], split_req[3])
                 self.inner_rep.append(request_t(cur_req.id, "signup", signup))
-	    
-	    elif (split_req[0] == 'ok'):
+    
+            elif (split_req[0] == 'ok'):
 
-                mark_me = mark_me_t(cur_req.time,
-				    self.time_to_lesson(cur_req.time),
+                mark_me = mark_me_t(cur_req.time, \
+				    self.time_to_lesson(cur_req.time), \
                                     cur_req.time)
-		self.inner_rep.append(request_t(cur_req.id, "ok", mark_me))
+                self.inner_rep.append(request_t(cur_req.id, "ok", mark_me))
 
-	    elif (split_req[0] == 'no'):
+            elif (split_req[0] == 'no'):
 
                 mark_me = mark_me_t(cur_req.time,
                                     self.time_to_lesson(cur_req.time),
                                     cur_req.time)
-		self.inner_rep.append(request_t(cur_req.id, "no", mark_me))
+                self.inner_rep.append(request_t(cur_req.id, "no", mark_me))
 
             elif (split_req[0] == 'markme' or (split_req[0] == 'mark' and \
-                split_req[1] == 'me')):
+                  split_req[1] == 'me')):
                 if (len(split_req) <= 2):
                     mark_me = mark_me_t(cur_req.time,
                                         self.time_to_lesson(cur_req.time),
@@ -161,46 +162,46 @@ class manager:
                      self.pending_req.append(cur_req)
 
     def who_can_mark_me(self):
-	for cur_req in self.current_req:
-	    workers = self.db.mark_me(cur_req.user_id)
-	    best_choices = reversed(workers.sort( lambda el: el[1] ))
-	    l = len(best_choices)
-	    the_man = None
-	    busy_level = 0
+        for cur_req in self.current_req:
+            workers = self.db.mark_me(cur_req.user_id, cur_req.data.n_lesson)
+            best_choices = reversed(workers.sort( lambda el: el[1] ))
+            l = len(best_choices)
+            the_man = None
+            busy_level = 0
 
-	    while (busy_level < 6 and the_man == None):
-		i = 0
-		while (i < l) and (check_busy(best_choices[i], busy_level)):
-		    i += 1
-		if (i != l):
-		    the_man = best_choices[i]
-		busy_level += 1
-	    if the_man == None:
-		writev = writev_t(cur_req.user_id,"Sorry. Nobody can mark you")
-	    else:
-		self.mark_busy(the_man[0])
-		data = self.db.get_user()
-		surname = data[0]
-		name = data[1]
-		group = data[2]
-		msg = "Could you please mark " + surname + " " + name +\
+            while (busy_level < 6 and the_man == None):
+                i = 0
+                while (i < l) and (check_busy(best_choices[i], busy_level)):
+                    i += 1
+                if (i != l):
+                    the_man = best_choices[i]
+                busy_level += 1
+            if the_man == None:
+                writev = writev_t(cur_req.user_id,"Sorry. Nobody can mark you")
+            else:
+                self.mark_busy(the_man[0])
+                data = self.db.get_user(cur_req.user_id)
+                surname = data[0]
+                name = data[1]
+                group = data[2]
+                msg = "Could you please mark " + surname + " " + name +\
 		      " " +  str(group) + "?"
-		writev = writev_t(the_man[0], msg)
+                writev = writev_t(the_man[0], msg)
 
-	    self.write_q.append(writev)
+            self.write_q.append(writev)
 		
 	    
     def check_busy(self, user_id, busy_level):
-	return busy_level < self.stat_work[user_id].use_coef
+        return busy_level < self.stat_work[user_id].use_coef
 
     def mark_busy(self, user_id):
-	self.stat_work[user_id].use_coef += 1
+        self.stat_work[user_id].use_coef += 1
 
     def mark_ok(self, user_id):
-	self.stat_work[user_id].ok_coef += 1
+        self.stat_work[user_id].ok_coef += 1
 
     def check_ok(self, user_id):
-	return self.stat_work[user_id].ok_coef < \
+        return self.stat_work[user_id].ok_coef < \
                self.stat_work[user_id].use_coef
 
     def signup_service_command(self):
@@ -226,8 +227,8 @@ class manager:
                                                        "recognized")
                 self.write_q.append(writev)
             if cur_req.type == 'signup':
-                if (self.db.add_user(cur_req.data.name, cur_req.data.surname, \
-                                     cur_req.data.group) == None):
+                if (self.db.add_user(cur_req.data.name,  cur_req.data.surname, \
+                                     cur_req.data.group, cur_req.user_id) == cur_req.user_id):
                     writev = writev_t(cur_req.user_id, "You have already been "+\
                                                        "registered.")
                 else:
@@ -235,17 +236,17 @@ class manager:
                                                        "registered.")
                 self.write_q.append(writev)
 
-	    if cur_req.type == 'ok':
-		if (self.check_ok(cur_req.user_id)):
-		    self.stat_work[cur_req.user_id].ok_coef += 1
-		    self.db.rate_up(cur_req.user_id, cur_req.data.n_lesson)
+            if cur_req.type == 'ok':
+                if (self.check_ok(cur_req.user_id)):
+                    self.stat_work[cur_req.user_id].ok_coef += 1
+                    self.db.rate_up(cur_req.user_id, cur_req.data.n_lesson)
 	
-	    if cur_req.type == 'no':
-		if (self.stat_work[cur_req.user_id].ok_coef > 0):
-		    self.stat_work[cur_req.user_id].ok_coef -= 1
+            if cur_req.type == 'no':
+                if (self.stat_work[cur_req.user_id].ok_coef > 0):
+                    self.stat_work[cur_req.user_id].ok_coef -= 1
 
-    def update(self):
-	pass
+    def update_stat(self):
+        self.stat_work = {}
 
     def send_requests(self):
         for cur_req in self.write_q:

@@ -37,7 +37,7 @@ class manager:
         self.current_req = []
         self.pending_req = []
         self.worker = []
-        self.stat_work = []
+        self.stat_work = {}
         self.write_q = []
         self.db = db_interactor.DB_interactor()
         self.connection = self.db.create_connect()
@@ -80,6 +80,20 @@ class manager:
             elif (split_req[0] == 'signup'):
                 signup = signup_t(split_req[1], split_req[2], split_req[3])
                 self.inner_rep.append(request_t(cur_req.id, "signup", signup))
+	    
+	    elif (split_req[0] == 'ok'):
+
+                mark_me = mark_me_t(cur_req.time,
+				    self.time_to_lesson(cur_req.time),
+                                    cur_req.time)
+		self.inner_rep.append(request_t(cur_req.id, "ok", mark_me))
+
+	    elif (split_req[0] == 'no'):
+
+                mark_me = mark_me_t(cur_req.time,
+                                    self.time_to_lesson(cur_req.time),
+                                    cur_req.time)
+		self.inner_rep.append(request_t(cur_req.id, "no", mark_me))
 
             elif (split_req[0] == 'markme' or (split_req[0] == 'mark' and \
                 split_req[1] == 'me')):
@@ -120,7 +134,9 @@ class manager:
 
     def reg_check(self):
         for cur_req in self.inner_rep:
-            if self.db.user_isregistred( and cur_req.type == 'mark_me':
+            if self.db.user_isregistred(cur_req.user_id) \
+               and (cur_req.type == 'mark_me' or  cur_req.type == 'ok'\
+					      or  cur_req.type == 'no' ):
                 writev = writev_t(cur_req.user_id, "You are not registered. " \
                                          + "Type 'help' for more information")
                 self.write_q.append(writev)
@@ -144,14 +160,48 @@ class manager:
                 else: 
                      self.pending_req.append(cur_req)
 
-    def rate_up(self):
-        pass
-
     def who_can_mark_me(self):
-        pass
+	for cur_req in self.current_req:
+	    workers = self.db.mark_me(cur_req.user_id)
+	    best_choices = reversed(workers.sort( lambda el: el[1] ))
+	    l = len(best_choices)
+	    the_man = None
+	    busy_level = 0
 
-    def highest_rate(self):
-        pass
+	    while (busy_level < 6 and the_man == None):
+		i = 0
+		while (i < l) and (check_busy(best_choices[i], busy_level)):
+		    i += 1
+		if (i != l):
+		    the_man = best_choices[i]
+		busy_level += 1
+	    if the_man == None:
+		writev = writev_t(cur_req.user_id,"Sorry. Nobody can mark you")
+	    else:
+		self.mark_busy(the_man[0])
+		data = self.db.get_user()
+		surname = data[0]
+		name = data[1]
+		group = data[2]
+		msg = "Could you please mark " + surname + " " + name +\
+		      " " +  str(group) + "?"
+		writev = writev_t(the_man[0], msg)
+
+	    self.write_q.append(writev)
+		
+	    
+    def check_busy(self, user_id, busy_level):
+	return busy_level < self.stat_work[user_id].use_coef
+
+    def mark_busy(self, user_id):
+	self.stat_work[user_id].use_coef += 1
+
+    def mark_ok(self, user_id):
+	self.stat_work[user_id].ok_coef += 1
+
+    def check_ok(self, user_id):
+	return self.stat_work[user_id].ok_coef < \
+               self.stat_work[user_id].use_coef
 
     def signup_service_command(self):
         for cur_req in self.inner_rep:
@@ -185,6 +235,18 @@ class manager:
                                                        "registered.")
                 self.write_q.append(writev)
 
+	    if cur_req.type == 'ok':
+		if (self.check_ok(cur_req.user_id)):
+		    self.stat_work[cur_req.user_id].ok_coef += 1
+		    self.db.rate_up(cur_req.user_id, cur_req.data.n_lesson)
+	
+	    if cur_req.type == 'no':
+		if (self.stat_work[cur_req.user_id].ok_coef > 0):
+		    self.stat_work[cur_req.user_id].ok_coef -= 1
+
+    def update(self):
+	pass
+
     def send_requests(self):
         for cur_req in self.write_q:
             self.msg.send(cur_req.id, cur_req.text)
@@ -198,6 +260,7 @@ while True:
     obj.convert_to_inner()
     obj.reg_check()
     obj.time_filter()
+    obj.who_can_mark_me()
     obj.signup_service_command()
     obj.send_requests()
     time.sleep(1)

@@ -2,6 +2,7 @@ import messenger
 import collections
 import datetime
 import time
+import db_interactor
 
 welcome_msg = "Welcome student. Are you tired of tedious lectures and you " + \
               "prefer to learn subjects from books? You are welcome then. " + \
@@ -38,6 +39,8 @@ class manager:
         self.worker = []
         self.stat_work = []
         self.write_q = []
+        self.db = db_interactor.DB_interactor()
+        self.connection = self.db.create_connect()
     def weekday_to_number(self, weekday):
         return {
                 'monday': 0,
@@ -117,7 +120,7 @@ class manager:
 
     def reg_check(self):
         for cur_req in self.inner_rep:
-            if True == False and cur_req.type == 'mark_me':
+            if self.db.user_isregistred( and cur_req.type == 'mark_me':
                 writev = writev_t(cur_req.user_id, "You are not registered. " \
                                          + "Type 'help' for more information")
                 self.write_q.append(writev)
@@ -152,7 +155,7 @@ class manager:
 
     def signup_service_command(self):
         for cur_req in self.inner_rep:
-            writev = writev_t(0, "None")
+            writev = None
             if cur_req.type == 'service':
                 if cur_req.data == '/start':
                     writev = writev_t(cur_req.user_id, welcome_msg)
@@ -173,8 +176,13 @@ class manager:
                                                        "recognized")
                 self.write_q.append(writev)
             if cur_req.type == 'signup':
-                #BD request - add_user() 
-                writev = writev_t(cur_req.user_id, "You have been registered.")
+                if (self.db.add_user(cur_req.data.name, cur_req.data.surname, \
+                                     cur_req.data.group) == None):
+                    writev = writev_t(cur_req.user_id, "You have already been "+\
+                                                       "registered.")
+                else:
+                    writev = writev_t(cur_req.user_id, "You have been "+\
+                                                       "registered.")
                 self.write_q.append(writev)
 
     def send_requests(self):

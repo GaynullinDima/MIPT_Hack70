@@ -13,7 +13,9 @@ help_msg    = "'help' - you are here already \n" + \
               "'mark me'/'markme' - mark me right now, " + \
                                    "right at the current lecture \n" + \
               "'mark me'/'markme %DayOfWeek/Today/Tomorrow %NumOfLesson/next/"+\
-                                                           "current"
+                                                           "current \n" +\
+              "'ok'/'no' - aknowledge/reject request. It influences your raiting\n"+\
+              "'now' - shows current lesson and time"
 
 request_t = collections.namedtuple('request_t', 'user_id type data')
 mark_me_t = collections.namedtuple('mark_me_t', 'time n_lesson mark_time')
@@ -180,7 +182,7 @@ class manager:
                 i = 0
                 while (i < l) and (self.check_busy(best_choices[i][0], busy_level)):
                     i += 1
-                if (i != l):
+                if (i != l and best_choices[i][0] != cur_req.user_id):
                     the_man = best_choices[i]
                 busy_level += 1
             if the_man == None:
@@ -188,7 +190,6 @@ class manager:
             else:
                 self.mark_busy(the_man[0])
                 data = self.db.get_user(cur_req.user_id)
-                #print(data)
                 surname = data[0]
                 name = data[1]
                 group = data[2]
@@ -233,14 +234,16 @@ class manager:
                                      datetime.datetime.now()))
                     writev = writev_t(cur_req.user_id, "Current time: " + \
                              str(datetime.datetime.now().ctime()) + "\n" + \
-                             "Current lesson: " + lesson)
+                             "Current lesson: " + self.db.get_subject(cur_req.user_id,
+                                                                      lesson)+\
+                             "(" + lesson + ")")
                 else: 
                     writev = writev_t(cur_req.user_id, "Command hasn't been " +
                                                        "recognized")
                 self.write_q.append(writev)
             if cur_req.type == 'signup':
                 if (self.db.add_user(cur_req.data.name,  cur_req.data.surname, \
-                                     cur_req.data.group, cur_req.user_id) == cur_req.user_id):
+                                     cur_req.data.group, cur_req.user_id) == None):
                     writev = writev_t(cur_req.user_id, "You have already been "+\
                                                        "registered.")
                 else:

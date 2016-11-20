@@ -34,9 +34,10 @@ CREATE TABLE course_type (
 	course_type_name VARCHAR(15)
 );
 INSERT INTO course_type (course_type_name) 
-      VALUES ('Лекция');
+      VALUES ('lecture');
 INSERT INTO course_type (course_type_name) 
-      VALUES ('Семинар');
+      VALUES ('seminar');
+
 
 CREATE TABLE lesson (
 	lesson_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,10 +58,3 @@ CREATE TABLE rating (
 	id REFERENCES user(id),
 	rate INTEGER 
 );
-
-
-
-
-
-
-

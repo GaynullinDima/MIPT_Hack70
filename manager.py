@@ -39,8 +39,10 @@ class manager:
         self.worker = []
         self.write_q = []
         self.db = db_interactor.DB_interactor()
-        data = db.get_all_user_id()
-        self.stat_work = { i[0]: stat_work_t(0,0) for i in data }
+        data = self.db.get_all_user_id()
+        self.stat_work = {}
+        if (data != None):
+            self.stat_work = { i[0]: stat_work_t(0,0) for i in data }
     def weekday_to_number(self, weekday):
         return {
                 'monday': 0,
@@ -165,6 +167,8 @@ class manager:
     def who_can_mark_me(self):
         for cur_req in self.current_req:
             workers = self.db.mark_me(cur_req.user_id, cur_req.data.n_lesson)
+            print(cur_req.user_id, cur_req.data.n_lesson)
+            print(workers)
             if workers == None or len(workers) == 0:
                 continue
             best_choices = reversed(workers.sort( lambda el: el[1] ))
@@ -208,7 +212,7 @@ class manager:
                self.stat_work[user_id].use_coef
     def cur_lesson(self):
         lesson = self.time_to_lesson(datetime.datetime.now())
-	return lesson
+        return lesson
 
     def signup_service_command(self):
         for cur_req in self.inner_rep:
@@ -269,8 +273,8 @@ class manager:
 obj = manager()
 lesson = obj.cur_lesson()
 while True:
-    print("current",obj.current_req)
-    print("pending",obj.pending_req)
+    #print("current",obj.current_req)
+    #print("pending",obj.pending_req)
 
     if (lesson != obj.cur_lesson()):
         obj.update_stat()

@@ -135,7 +135,6 @@ class DB_interactor:
 		day_id = str(day_id)
 		cur.execute("SELECT schedule.lesson_id FROM schedule INNER JOIN lesson ON lesson.lesson_id = schedule.lesson_id WHERE num = ? AND group_id = ? AND day_id = ?", (num, group_id, day_id))
 		result = cur.fetchall()
-		print(result)
 		if not result:
 			return None
 		else:

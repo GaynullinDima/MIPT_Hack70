@@ -32,12 +32,12 @@ class DB_interactor:
 				return None
 
 		
-	def user_isregistred(self, first_name, last_name, group, id):
+	def user_isregistred(self, id):
 		con = self.create_connect()
 		try:
 			with con:
 				cur = con.cursor()
-				cur.execute("SELECT id FROM user WHERE first_name = ? AND last_name = ? AND group_id = ? AND id = ?", (first_name, last_name, group, id))
+				cur.execute("SELECT id FROM user WHERE id = ?", (id))
 				result = cur.fetchall()
 				if not result:
 					return (False, None)
@@ -47,8 +47,8 @@ class DB_interactor:
 			return (False, None)
 
 
-	def get_user(self, first_name, last_name, group, id):
-		result = self.user_isregistred(first_name, last_name, group, id)
+	def get_user(self, id):
+		result = self.user_isregistred(id)
 		return result[1]
 
 	'''______________________________________________________________________________________'''

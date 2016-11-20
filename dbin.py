@@ -7,8 +7,10 @@ db = db.DB_interactor()
 current_day = time.strftime("%A")
 
 
-print(db.user_isregistred("vas", "pup", 41, 3))
-print(db.add_user("vas", "pup", 412, 4))
-print(db.get_user("vas", "pup", 412, 3))
-print(db.mark_me(3, 2))
+print(db.user_isregistred(1))
+print(db.add_user("pup", "vas", 416, 3))
+print(db.add_user("vas", "pup", 416, 4))
+print(db.get_user(1))
+print(db.get_group_id_by_id(3))
+print(db.mark_me(3, 3))
 

@@ -6,10 +6,10 @@ import time
 
 class DB_interactor:
 	def __init__(self):
-		self.current_day = time.strftime("%A")
+		self.current_day = 'Monday'
 
 	def create_connect(self):
-		con = sqlite3.connect('our.db')
+		con = sqlite3.connect('data_base.db')
 		return con
 
 	def close_connect(self, con):
@@ -17,7 +17,7 @@ class DB_interactor:
 		con.close()
 
 	def add_user(self, first_name, last_name, group, id):
-		result = self.user_isregistred(first_name, last_name, group, id)
+		result = self.user_isregistred(id)
 		con = self.create_connect()
 		if result[0]:
 			return result[1]
@@ -27,7 +27,8 @@ class DB_interactor:
 					cur = con.cursor()
 					cur.execute("INSERT INTO user(first_name, last_name, group_id, id) VALUES (?, ?, ?, ?)", (first_name, last_name, group, id))
 					con.commit()
-					return self.user_isregistred(first_name, last_name, group, id)[1]
+					
+					return self.user_isregistred(id)[1]
 			except sqlite3.Error:
 				return None
 
@@ -37,7 +38,7 @@ class DB_interactor:
 		try:
 			with con:
 				cur = con.cursor()
-				cur.execute("SELECT id FROM user WHERE id = ?", (id))
+				cur.execute("SELECT id FROM user WHERE id = ?", (id, ))
 				result = cur.fetchall()
 				if not result:
 					return (False, None)
@@ -109,7 +110,7 @@ class DB_interactor:
 		day_id = self.get_day_id_by_day(self.current_day)
 		con = self.create_connect()
 		cur = con.cursor()
-		cur.execute("SELECT schedule.lesson_id FROM schedule INNER JOIN lesson ON lesson.lesson_id = schedule.lesson_id WHERE num = ? AND group_id = ? AND day_id = ?", (num, group_id, day_id))
+		cur.execute("SELECT lesson.lesson_id FROM schedule INNER JOIN lesson ON lesson.lesson_id = schedule.lesson_id WHERE num = ? AND group_id = ? AND day_id = ?", (num, group_id, day_id))
 		result = cur.fetchall()
 		if not result:
 			return None

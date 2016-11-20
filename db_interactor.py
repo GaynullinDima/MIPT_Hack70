@@ -26,8 +26,10 @@ class DB_interactor:
 				with con:
 					cur = con.cursor()
 					cur.execute("INSERT INTO user(first_name, last_name, group_id, id) VALUES (?, ?, ?, ?)", (first_name, last_name, group, id))
+					result = self.get_lesson_id_by_group_id(group)
+					for i in result:
+						cur.execute("INSERT INTO rating(lesson_id, id, rate) VALUES (?, ?, ?)", (int(i[0]), id, 0))
 					con.commit()
-					
 					return self.user_isregistred(id)[1]
 			except sqlite3.Error:
 				return None
@@ -42,6 +44,16 @@ class DB_interactor:
 		else:
 			return result
 
+	def get_lesson_id_by_group_id(self, group_id):
+		con = self.create_connect()
+		cur = con.cursor()
+		cur.execute("SELECT s.lesson_id FROM schedule AS s INNER JOIN lesson AS l ON s.lesson_id = l.lesson_id WHERE group_id = ?", (str(group_id),))
+		result = cur.fetchall()
+		print(result)
+		if not result:
+			return None
+		else:
+			return result
 		
 	def user_isregistred(self, id):
 		con = self.create_connect()

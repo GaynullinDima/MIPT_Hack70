@@ -12,15 +12,27 @@ class DB_interactor:
 		con = sqlite3.connect('data_base.db')
 		return con
 
+
 	def close_connect(self, con):
 		con.commit()
 		con.close()
+
+	def get_subject(self, id, num):
+		con = self.create_connect()
+		cur = con.cursor()
+		lesson_id = self.get_lesson_id(id, num)
+		cur.execute("SELECT c.course_name FROM lesson as l INNER JOIN course AS c ON c.course_id = l.course_id WHERE l.lesson_id = ?", (lesson_id,))
+		result = cur.fetchall()
+		if not result:
+			return None
+		else:
+			return result[0][0]
 
 	def add_user(self, first_name, last_name, group, id):
 		result = self.user_isregistred(id)
 		con = self.create_connect()
 		if result[0]:
-			return result[1]
+			return None
 		else:
 			try:
 				with con:

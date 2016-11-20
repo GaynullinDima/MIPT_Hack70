@@ -10,4 +10,5 @@ current_day = time.strftime("%A")
 print(db.user_isregistred(1))
 print(db.add_user("vas", "pup", 416, 5))
 print(db.get_user(1))
+print(db.get_subject(4, 3))
 

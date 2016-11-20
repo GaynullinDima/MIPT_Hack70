@@ -70,8 +70,14 @@ class DB_interactor:
 
 
 	def get_user(self, id):
-		result = self.user_isregistred(id)
-		return result[1]
+		con = self.create_connect()
+		cur = con.cursor()
+		cur.execute("SELECT first_name, last_name, group_id FROM user WHERE id = ?", (id, ))
+		result = cur.fetchall()
+		if not result:
+			return None
+		else:
+			return result[0]
 
 	'''______________________________________________________________________________________'''
 
@@ -135,7 +141,6 @@ class DB_interactor:
 		day_id = str(day_id)
 		cur.execute("SELECT schedule.lesson_id FROM schedule INNER JOIN lesson ON lesson.lesson_id = schedule.lesson_id WHERE num = ? AND group_id = ? AND day_id = ?", (num, group_id, day_id))
 		result = cur.fetchall()
-		print(result)
 		if not result:
 			return None
 		else:

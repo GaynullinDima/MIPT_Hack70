@@ -42,8 +42,10 @@ class manager:
         self.db = db_interactor.DB_interactor()
         data = self.db.get_all_user_id()
         self.stat_work = {}
+
         if (data != None):
             self.stat_work = { i[0]: [0,0] for i in data }
+
     def weekday_to_number(self, weekday):
         return {
                 'monday': 0,
@@ -234,9 +236,9 @@ class manager:
                                      datetime.datetime.now()))
                     writev = writev_t(cur_req.user_id, "Current time: " + \
                              str(datetime.datetime.now().ctime()) + "\n" + \
-                             "Current lesson: " + self.db.get_subject(cur_req.user_id,
-                                                                      lesson)+\
-                             "(" + lesson + ")")
+                             "Current lesson: " + str(self.db.get_subject(cur_req.user_id,
+                                                                      int(lesson)-1))+\
+                             "(" + lesson + ")\n" + "If you see 'None', you should signup")
                 else: 
                     writev = writev_t(cur_req.user_id, "Command hasn't been " +
                                                        "recognized")

@@ -19,7 +19,7 @@ request_t = collections.namedtuple('request_t', 'user_id type data')
 mark_me_t = collections.namedtuple('mark_me_t', 'time n_lesson mark_time')
 signup_t  = collections.namedtuple('signup_t' , 'name surname group')
 writev_t   = collections.namedtuple('writev_t', 'id text') 
-stat_work_t = collections.namedtuple('stat_work_t', 'user_id use_coef ok_coef')
+stat_work_t = collections.namedtuple('stat_work_t', 'use_coef ok_coef')
 
 schedule = [ (datetime.time(9,0,0), datetime.time(10,25,0) ),  \
              (datetime.time(10,25,0), datetime.time(12,10,0) ),\
@@ -37,9 +37,10 @@ class manager:
         self.current_req = []
         self.pending_req = []
         self.worker = []
-        self.stat_work = {}
         self.write_q = []
         self.db = db_interactor.DB_interactor()
+        data = db.get_all_user_id()
+        self.stat_work = { i[0]: stat_work_t(0,0) for i in data }
     def weekday_to_number(self, weekday):
         return {
                 'monday': 0,
@@ -78,7 +79,7 @@ class manager:
                 split_req[0] == 'now'):
                 self.inner_rep.append(request_t(cur_req.id, "service", \
                                                 split_req[0])) 
-            elif (split_req[0] == 'signup'):
+            elif (split_req[0] == 'signup' and len(split_req) == 4):
                 signup = signup_t(split_req[1], split_req[2], split_req[3])
                 self.inner_rep.append(request_t(cur_req.id, "signup", signup))
     
@@ -135,7 +136,7 @@ class manager:
 
     def reg_check(self):
         for cur_req in self.inner_rep:
-            if self.db.user_isregistred(cur_req.user_id) \
+            if self.db.user_isregistred(cur_req.user_id)[0] == False \
                and (cur_req.type == 'mark_me' or  cur_req.type == 'ok'\
 					      or  cur_req.type == 'no' ):
                 writev = writev_t(cur_req.user_id, "You are not registered. " \
@@ -164,6 +165,8 @@ class manager:
     def who_can_mark_me(self):
         for cur_req in self.current_req:
             workers = self.db.mark_me(cur_req.user_id, cur_req.data.n_lesson)
+            if workers == None or len(workers) == 0:
+                continue
             best_choices = reversed(workers.sort( lambda el: el[1] ))
             l = len(best_choices)
             the_man = None
@@ -203,6 +206,9 @@ class manager:
     def check_ok(self, user_id):
         return self.stat_work[user_id].ok_coef < \
                self.stat_work[user_id].use_coef
+    def cur_lesson(self):
+        lesson = self.time_to_lesson(datetime.datetime.now())
+	return lesson
 
     def signup_service_command(self):
         for cur_req in self.inner_rep:
@@ -234,19 +240,26 @@ class manager:
                 else:
                     writev = writev_t(cur_req.user_id, "You have been "+\
                                                        "registered.")
+                    self.stat_work[cur_req.user_id] = stat_work_t(0, 0)
                 self.write_q.append(writev)
 
             if cur_req.type == 'ok':
                 if (self.check_ok(cur_req.user_id)):
                     self.stat_work[cur_req.user_id].ok_coef += 1
                     self.db.rate_up(cur_req.user_id, cur_req.data.n_lesson)
-	
+                else:
+                    writev = writev_t(cur_req.user_id, "Cheating is a bad thing.")
+                    self.write_q.append(writev)
+
             if cur_req.type == 'no':
                 if (self.stat_work[cur_req.user_id].ok_coef > 0):
                     self.stat_work[cur_req.user_id].ok_coef -= 1
+                else:
+                    writev = writev_t(cur_req.user_id, "Nobody asked you.")
+                    self.write_q.append(writev)
 
     def update_stat(self):
-        self.stat_work = {}
+        self.stat_work = {key: stat_work_t(0, 0) for key in self.stat_work}
 
     def send_requests(self):
         for cur_req in self.write_q:
@@ -254,9 +267,14 @@ class manager:
         self.write_q = []
 
 obj = manager()
+lesson = obj.cur_lesson()
 while True:
     print("current",obj.current_req)
     print("pending",obj.pending_req)
+
+    if (lesson != obj.cur_lesson()):
+        obj.update_stat()
+        lesson = obj.cur_lesson()
     obj.read_requests()
     obj.convert_to_inner()
     obj.reg_check()

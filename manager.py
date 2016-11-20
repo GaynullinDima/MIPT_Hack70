@@ -19,7 +19,6 @@ request_t = collections.namedtuple('request_t', 'user_id type data')
 mark_me_t = collections.namedtuple('mark_me_t', 'time n_lesson mark_time')
 signup_t  = collections.namedtuple('signup_t' , 'name surname group')
 writev_t   = collections.namedtuple('writev_t', 'id text') 
-stat_work_t = collections.namedtuple('stat_work_t', 'use_coef ok_coef')
 
 schedule = [ (datetime.time(9,0,0), datetime.time(10,25,0) ),  \
              (datetime.time(10,25,0), datetime.time(12,10,0) ),\
@@ -42,7 +41,7 @@ class manager:
         data = self.db.get_all_user_id()
         self.stat_work = {}
         if (data != None):
-            self.stat_work = { i[0]: stat_work_t(0,0) for i in data }
+            self.stat_work = { i[0]: [0,0] for i in data }
     def weekday_to_number(self, weekday):
         return {
                 'monday': 0,
@@ -171,14 +170,15 @@ class manager:
             print(workers)
             if workers == None or len(workers) == 0:
                 continue
-            best_choices = reversed(workers.sort( lambda el: el[1] ))
+            workers.sort( key=lambda el: el[1] )
+            best_choices = [i for i in reversed(workers)]
             l = len(best_choices)
             the_man = None
             busy_level = 0
 
             while (busy_level < 6 and the_man == None):
                 i = 0
-                while (i < l) and (check_busy(best_choices[i], busy_level)):
+                while (i < l) and (self.check_busy(best_choices[i][0], busy_level)):
                     i += 1
                 if (i != l):
                     the_man = best_choices[i]
@@ -188,10 +188,11 @@ class manager:
             else:
                 self.mark_busy(the_man[0])
                 data = self.db.get_user(cur_req.user_id)
+                #print(data)
                 surname = data[0]
                 name = data[1]
                 group = data[2]
-                msg = "Could you please mark " + surname + " " + name +\
+                msg = "Could you please mark " + str(surname) + " " + str(name) +\
 		      " " +  str(group) + "?"
                 writev = writev_t(the_man[0], msg)
 
@@ -199,17 +200,18 @@ class manager:
 		
 	    
     def check_busy(self, user_id, busy_level):
-        return busy_level < self.stat_work[user_id].use_coef
+        print(self.stat_work)
+        return busy_level < self.stat_work[user_id][0]
 
     def mark_busy(self, user_id):
-        self.stat_work[user_id].use_coef += 1
+        self.stat_work[user_id][0] += 1
 
     def mark_ok(self, user_id):
-        self.stat_work[user_id].ok_coef += 1
+        self.stat_work[user_id][1] += 1
 
     def check_ok(self, user_id):
-        return self.stat_work[user_id].ok_coef < \
-               self.stat_work[user_id].use_coef
+        return self.stat_work[user_id][1] < \
+               self.stat_work[user_id][0]
     def cur_lesson(self):
         lesson = self.time_to_lesson(datetime.datetime.now())
         return lesson
@@ -244,26 +246,26 @@ class manager:
                 else:
                     writev = writev_t(cur_req.user_id, "You have been "+\
                                                        "registered.")
-                    self.stat_work[cur_req.user_id] = stat_work_t(0, 0)
+                    self.stat_work[cur_req.user_id] = [0, 0]
                 self.write_q.append(writev)
 
             if cur_req.type == 'ok':
                 if (self.check_ok(cur_req.user_id)):
-                    self.stat_work[cur_req.user_id].ok_coef += 1
+                    self.stat_work[cur_req.user_id][1] += 1
                     self.db.rate_up(cur_req.user_id, cur_req.data.n_lesson)
                 else:
                     writev = writev_t(cur_req.user_id, "Cheating is a bad thing.")
                     self.write_q.append(writev)
 
             if cur_req.type == 'no':
-                if (self.stat_work[cur_req.user_id].ok_coef > 0):
-                    self.stat_work[cur_req.user_id].ok_coef -= 1
+                if (self.stat_work[cur_req.user_id][1] > 0):
+                    self.stat_work[cur_req.user_id][1] -= 1
                 else:
                     writev = writev_t(cur_req.user_id, "Nobody asked you.")
                     self.write_q.append(writev)
 
     def update_stat(self):
-        self.stat_work = {key: stat_work_t(0, 0) for key in self.stat_work}
+        self.stat_work = {key: [0, 0] for key in self.stat_work}
 
     def send_requests(self):
         for cur_req in self.write_q:

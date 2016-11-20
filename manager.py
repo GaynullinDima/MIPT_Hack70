@@ -70,7 +70,8 @@ class manager:
         for cur_req in self.read_q:
             split_req = cur_req.text.split(' ')
             split_req = [elem.lower() for elem in split_req if len(elem)]
-            if (split_req[0] == 'help' or split_req[0] == '/start'):
+            if (split_req[0] == 'help' or split_req[0] == '/start' or \
+                split_req[0] == 'now'):
                 self.inner_rep.append(request_t(cur_req.id, "service", \
                                                 split_req[0])) 
             elif (split_req[0] == 'signup'):
@@ -116,18 +117,26 @@ class manager:
 
     def reg_check(self):
         for cur_req in self.inner_rep:
-            if False == False and cur_req.type == 'mark_me':
+            if True == False and cur_req.type == 'mark_me':
                 writev = writev_t(cur_req.user_id, "You are not registered. " \
                                          + "Type 'help' for more information")
                 self.write_q.append(writev)
 
     def time_filter(self):
         temp_requests = self.inner_rep + self.pending_req
+        self.current_req = []
+        self.pending_req = []
         for cur_req in temp_requests:
             if (cur_req.type == "mark_me"):
-                now_time = datetime.now()
-                if time_to_lesson(now_time.time()) == cur_req.n_lesson and \
-                   now_time.date() == cur_req.mark_time.date():
+                now_time = datetime.datetime.today()
+                if (cur_req.data.n_lesson == -1):
+                    writev = writev_t(cur_req.user_id, "What time is it? \n" +\
+                                                       "Are you insane?")
+                    self.write_q.append(writev)
+                    continue
+
+                if self.time_to_lesson(now_time) == cur_req.data.n_lesson and\
+                   now_time.date() == cur_req.data.mark_time.date():
                         self.current_req.append(cur_req)
                 else: 
                      self.pending_req.append(cur_req)
@@ -149,6 +158,16 @@ class manager:
                     writev = writev_t(cur_req.user_id, welcome_msg)
                 elif cur_req.data == 'help':
                     writev = writev_t(cur_req.user_id, help_msg)
+                elif cur_req.data == 'now': 
+                    lesson = ""
+                    if self.time_to_lesson(datetime.datetime.now()) == -1:
+                        lesson = "It's time to have a rest!"
+                    else:
+                        lesson = str(self.time_to_lesson(\
+                                     datetime.datetime.now()))
+                    writev = writev_t(cur_req.user_id, "Current time: " + \
+                             str(datetime.datetime.now().ctime()) + "\n" + \
+                             "Current lesson: " + lesson)
                 else: 
                     writev = writev_t(cur_req.user_id, "Command hasn't been " +
                                                        "recognized")
@@ -170,6 +189,7 @@ while True:
     obj.read_requests()
     obj.convert_to_inner()
     obj.reg_check()
+    obj.time_filter()
     obj.signup_service_command()
     obj.send_requests()
     time.sleep(1)

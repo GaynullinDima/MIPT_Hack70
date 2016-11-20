@@ -2,7 +2,8 @@ CREATE TABLE user (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
     first_name VARCHAR(255),
 	last_name VARCHAR(255),
-	group_id INTEGER
+	group_id INTEGER,
+	id INTEGER
 );
 
 CREATE TABLE day (
@@ -53,7 +54,7 @@ CREATE TABLE schedule (
 CREATE TABLE rating (
 	rating_id INTEGER PRIMARY KEY AUTOINCREMENT,
 	lesson_id REFERENCES lesson(lesson_id),
-	user_id REFERENCES user(user_id),
+	id REFERENCES user(id),
 	rate INTEGER 
 );
 
